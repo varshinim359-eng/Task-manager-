@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Management Application</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        header {
+            background: #2563eb;
+            color: white;
+            text-align: center;
+            padding: 22px;
+        }
+
+        .container {
+            width: 92%;
+            max-width: 750px;
+            margin: 30px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px #00000015;
+        }
+
+        .task-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        input, textarea, select, button {
+            font-size: 16px;
+            padding: 12px;
+            border-radius: 7px;
+        }
+
+        input, textarea, select {
+            border: 1px solid #cbd5e1;
+            width: 100%;
+        }
+
+        .task-form input {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        button {
+            border: none;
+            cursor: pointer;
+        }
+
+        .add-btn {
+            background: #2563eb;
+            color: white;
+        }
+
+        .task {
+            margin-top: 15px;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 9px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .task h3 {
+            margin: 0 0 7px;
+        }
+
+        .completed h3 {
+            text-decoration: line-through;
+            color: #64748b;
+        }
+
+        .actions {
+            display: flex;
+            gap: 7px;
+        }
+
+        .done-btn {
+            background: #16a34a;
+            color: white;
+        }
+
+        .edit-btn {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #dc2626;
+            color: white;
+        }
+
+        #message {
+            color: #64748b;
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 16px;
+            }
+
+            .actions {
+                width: 100%;
+            }
+
+            .actions button {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>My Task Manager</h1>
+    <p>Plan your work. Complete your goals.</p>
+</header>
+
+<div class="container">
+    <h2>Add a Task</h2>
+
+    <form id="taskForm" class="task-form">
+        <input type="text" id="taskTitle"
+               placeholder="Enter task title" required>
+
+        <button type="submit" class="add-btn">
+            Add Task
+        </button>
+    </form>
+
+    <h2>My Tasks</h2>
+    <p id="message">No tasks available. Add your first task!</p>
+    <div id="taskList"></div>
+</div>
+
+<script>
+    let tasks = JSON.parse(
+        localStorage.getItem("myTasks") || "[]"
+    );
+
+    let nextId = tasks.reduce(
+        (max, task) => Math.max(max, task.id), 0
+    ) + 1;
+
+    const taskForm = document.getElementById("taskForm");
+    const taskTitle = document.getElementById("taskTitle");
+    const taskList = document.getElementById("taskList");
+    const message = document.getElementById("message");
+
+    function saveTasks() {
+        localStorage.setItem("myTasks", JSON.stringify(tasks));
+    }
+
+    function renderTasks() {
+        taskList.replaceChildren();
+        message.style.display = tasks.length ? "none" : "block";
+
+        tasks.forEach(task => {
+            const card = document.createElement("div");
+            card.className = "task" +
+                (task.completed ? " completed" : "");
+
+            const details = document.createElement("div");
+            const heading = document.createElement("h3");
+            heading.textContent = task.title;
+
+            const status = document.createElement("p");
+            status.textContent = task.completed
+                ? "Status: Completed"
+                : "Status: Pending";
+
+            details.append(heading, status);
+
+            const actions = document.createElement("div");
+            actions.className = "actions";
+
+            const done = document.createElement("button");
+            done.className = "done-btn";
+            done.textContent = task.completed ? "Undo" : "Complete";
+            done.onclick = () => {
+                task.completed = !task.completed;
+                saveTasks();
+                renderTasks();
+            };
+
+            const edit = document.createElement("button");
+            edit.className = "edit-btn";
+            edit.textContent = "Edit";
+            edit.onclick = () => {
+                const updated = prompt("Edit task:", task.title);
+
+                if (updated !== null && updated.trim()) {
+                    task.title = updated.trim();
+                    saveTasks();
+                    renderTasks();
+                }
+            };
+
+            const remove = document.createElement("button");
+            remove.className = "delete-btn";
+            remove.textContent = "Delete";
+            remove.onclick = () => {
+                if (confirm("Delete this task?")) {
+                    tasks = tasks.filter(item => item.id !== task.id);
+                    saveTasks();
+                    renderTasks();
+                }
+            };
+
+            actions.append(done, edit, remove);
+            card.append(details, actions);
+            taskList.append(card);
+        });
+    }
+
+    taskForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        const title = taskTitle.value.trim();
+        if (!title) return;
+
+        tasks.push({
+            id: nextId++,
+            title: title,
+            completed: false
+        });
+
+        saveTasks();
+        renderTasks();
+        taskForm.reset();
+    });
+
+    renderTasks();
+</script>
+
+</body>
+</html>
